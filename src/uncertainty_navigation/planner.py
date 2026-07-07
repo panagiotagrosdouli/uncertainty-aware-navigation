@@ -21,6 +21,7 @@ class PlannerResult:
     planner_name: str
     path: list[Cell] | None
     lambda_uncertainty: float | None = None
+    mu_occupancy: float | None = None
 
 
 def plan_path(
@@ -30,6 +31,8 @@ def plan_path(
     start: Cell,
     goal: Cell,
     lambda_uncertainty: float = 0.0,
+    occupancy_probability: np.ndarray | None = None,
+    mu_occupancy: float = 0.0,
 ) -> PlannerResult:
     """Run one of the supported planners."""
 
@@ -39,8 +42,17 @@ def plan_path(
     if planner_name == "risk_aware_astar":
         return PlannerResult(
             planner_name="risk_aware_astar",
-            path=risk_aware_astar(occupancy, uncertainty, start, goal, lambda_uncertainty),
+            path=risk_aware_astar(
+                occupancy=occupancy,
+                uncertainty=uncertainty,
+                start=start,
+                goal=goal,
+                lambda_uncertainty=lambda_uncertainty,
+                occupancy_probability=occupancy_probability,
+                mu_occupancy=mu_occupancy,
+            ),
             lambda_uncertainty=lambda_uncertainty,
+            mu_occupancy=mu_occupancy,
         )
 
     raise ValueError(f"Unsupported planner: {planner_name}")
