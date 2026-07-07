@@ -8,6 +8,7 @@ import pandas as pd
 import yaml
 
 from uncertainty_navigation.environment import generate_random_grid
+from uncertainty_navigation.experiment_plots import create_online_summary_plots
 from uncertainty_navigation.result_summary import summarize_results
 from uncertainty_navigation.simulation import SimulationConfig, run_online_navigation
 from uncertainty_navigation.visualization import plot_map_with_path
@@ -29,8 +30,10 @@ def main() -> None:
     experiment_name = config["experiment"]["name"]
     output_dir = Path(config["outputs"]["directory"])
     figures_dir = output_dir / "figures"
+    summary_figures_dir = figures_dir / "summary"
     output_dir.mkdir(parents=True, exist_ok=True)
     figures_dir.mkdir(parents=True, exist_ok=True)
+    summary_figures_dir.mkdir(parents=True, exist_ok=True)
 
     map_config = config["map"]
     sensor_config = config["sensor"]
@@ -126,6 +129,7 @@ def main() -> None:
         compute_ci=False,
     )
     summary.to_csv(summary_path, index=False)
+    create_online_summary_plots(summary, summary_figures_dir)
 
     ci_summary = summarize_results(
         df=results,
@@ -141,6 +145,7 @@ def main() -> None:
     print(f"Saved summary: {summary_path}")
     print(f"Saved CI summary: {ci_summary_path}")
     print(f"Saved figures: {figures_dir}")
+    print(f"Saved summary figures: {summary_figures_dir}")
 
 
 if __name__ == "__main__":
