@@ -24,7 +24,8 @@ dependencies = [
     "scipy>=1.11",
     "matplotlib>=3.8",
     "pandas>=2.1",
-    "pyyaml>=6.0"
+    "pyyaml>=6.0",
+    "setuptools>=68"
 ]
 
 [project.optional-dependencies]
@@ -40,6 +41,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+addopts = ["-p", "no:launch_testing"]
 
 [tool.ruff]
 line-length = 100
