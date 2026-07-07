@@ -15,6 +15,7 @@ import yaml
 from uncertainty_navigation.environment import generate_random_grid
 from uncertainty_navigation.metrics import evaluate_path
 from uncertainty_navigation.planner import plan_path
+from uncertainty_navigation.result_summary import summarize_results
 from uncertainty_navigation.visualization import plot_map_with_path, plot_uncertainty_map
 
 CONFIG_PATH = Path("configs/first_experiment.yaml")
@@ -136,21 +137,31 @@ def main() -> None:
     results = pd.DataFrame.from_records(records)
     results_path = output_dir / "metrics.csv"
     summary_path = output_dir / "summary.csv"
+    ci_summary_path = output_dir / "summary_ci.csv"
     results.to_csv(results_path, index=False)
 
-    summary = results.groupby(["planner", "lambda_uncertainty"], as_index=False).agg(
-        success_rate=("success", "mean"),
-        mean_path_length=("path_length", "mean"),
-        std_path_length=("path_length", "std"),
-        mean_accumulated_risk_cost=("accumulated_risk_cost", "mean"),
-        std_accumulated_risk_cost=("accumulated_risk_cost", "std"),
-        mean_runtime_seconds=("runtime_seconds", "mean"),
-        std_runtime_seconds=("runtime_seconds", "std"),
+    summary = summarize_results(
+        df=results,
+        group_by=["planner", "lambda_uncertainty"],
+        metrics=["path_length", "accumulated_risk_cost", "collision_count", "runtime_seconds"],
+        success_column="success",
+        compute_ci=False,
     )
     summary.to_csv(summary_path, index=False)
 
+    ci_summary = summarize_results(
+        df=results,
+        group_by=["planner", "lambda_uncertainty"],
+        metrics=["path_length", "accumulated_risk_cost", "runtime_seconds"],
+        success_column="success",
+        compute_ci=True,
+        ci_iterations=1000,
+    )
+    ci_summary.to_csv(ci_summary_path, index=False)
+
     print(f"Saved metrics: {results_path}")
     print(f"Saved summary: {summary_path}")
+    print(f"Saved CI summary: {ci_summary_path}")
     print(f"Saved figures: {figures_dir}")
 
 
