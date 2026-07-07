@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from uncertainty_navigation.exploration import (
-    ExplorationState,
     initialize_exploration,
     planning_map_from_exploration,
     update_exploration,
@@ -26,6 +25,7 @@ class SimulationConfig:
     sensor_radius: int
     max_steps: int = 500
     treat_unknown_as_free: bool = True
+    mu_occupancy: float = 0.0
 
 
 @dataclass
@@ -38,6 +38,7 @@ class SimulationResult:
     collisions: int
     final_coverage: float
     final_mean_uncertainty: float
+    mean_executed_occupancy_probability: float
     path_history: list[Cell] = field(default_factory=list)
 
 
@@ -53,6 +54,7 @@ def run_online_navigation(
     exploration = initialize_exploration(ground_truth_occupancy.shape)
     current_path: list[Cell] | None = None
     collisions = 0
+    executed_occupancy_probabilities: list[float] = []
 
     while not robot.at_goal and robot.steps < config.max_steps:
         exploration = update_exploration(
@@ -73,6 +75,8 @@ def run_online_navigation(
             start=robot.position,
             goal=goal,
             lambda_uncertainty=config.lambda_uncertainty,
+            occupancy_probability=exploration.occupancy_probability,
+            mu_occupancy=config.mu_occupancy,
         )
         robot.register_replan()
         current_path = plan.path
@@ -81,9 +85,12 @@ def run_online_navigation(
         if next_cell is None:
             break
 
+        executed_occupancy_probabilities.append(
+            float(exploration.occupancy_probability[next_cell])
+        )
+
         if ground_truth_occupancy[next_cell] == 1:
             collisions += 1
-            # Stop on collision in this first simulation version.
             break
 
         robot.move_to(next_cell)
@@ -96,6 +103,12 @@ def run_online_navigation(
         sensor_radius=config.sensor_radius,
     )
 
+    mean_executed_occupancy_probability = (
+        float(np.mean(executed_occupancy_probabilities))
+        if executed_occupancy_probabilities
+        else 0.0
+    )
+
     return SimulationResult(
         success=robot.at_goal,
         steps=robot.steps,
@@ -103,5 +116,6 @@ def run_online_navigation(
         collisions=collisions,
         final_coverage=exploration.coverage,
         final_mean_uncertainty=exploration.mean_uncertainty,
+        mean_executed_occupancy_probability=mean_executed_occupancy_probability,
         path_history=robot.path_history,
     )
