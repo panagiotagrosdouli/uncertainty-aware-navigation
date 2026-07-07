@@ -1,0 +1,30 @@
+experiment:
+  name: online_navigation_grid
+  description: Online observe-plan-move-replan simulation under map uncertainty.
+
+map:
+  type: grid
+  width: 40
+  height: 40
+  obstacle_density: 0.15
+  uncertainty_level: 1.0
+
+sensor:
+  model: circular_radius
+  radius: 8
+  treat_unknown_as_free: true
+
+planning:
+  planners:
+    - astar
+    - risk_aware_astar
+  lambda_uncertainty: [0.0, 0.5, 1.0, 2.0]
+
+simulation:
+  max_steps: 300
+
+trials:
+  random_seeds: [0, 1, 2, 3, 4]
+
+outputs:
+  directory: outputs/online_navigation_grid
