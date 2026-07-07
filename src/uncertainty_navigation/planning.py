@@ -7,7 +7,11 @@ implementation is a grid-based A* planner with an optional uncertainty penalty.
 from __future__ import annotations
 
 
-def uncertainty_weighted_cost(geometric_cost: float, uncertainty: float, lambda_uncertainty: float) -> float:
+def uncertainty_weighted_cost(
+    geometric_cost: float,
+    uncertainty: float,
+    lambda_uncertainty: float,
+) -> float:
     """Compute a simple uncertainty-weighted traversal cost.
 
     Parameters
