@@ -19,6 +19,7 @@ planning:
     - astar
     - risk_aware_astar
   lambda_uncertainty: [0.0, 0.5, 1.0, 2.0]
+  mu_occupancy: [0.0, 1.0, 2.0]
 
 simulation:
   max_steps: 300
