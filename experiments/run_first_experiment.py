@@ -3,7 +3,6 @@
 The initial experiment will compare classical shortest-path planning with an
 uncertainty-weighted risk-aware planner on controlled grid-map environments.
 """
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -27,7 +26,10 @@ def main() -> None:
     config = load_config()
     experiment_name = config["experiment"]["name"]
     print(f"Loaded experiment: {experiment_name}")
-    print("Implementation TODO: grid generation, baseline planning, risk-aware planning, and metric reporting.")
+    print(
+        "Implementation TODO: grid generation, baseline planning, "
+        "risk-aware planning, and metric reporting."
+    )
 
 
 if __name__ == "__main__":
