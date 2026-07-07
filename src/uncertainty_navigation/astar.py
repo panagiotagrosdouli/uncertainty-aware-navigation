@@ -11,6 +11,12 @@ Cell = tuple[int, int]
 CostFunction = Callable[[Cell], float]
 
 
+def zero_cost(_cell: Cell) -> float:
+    """Return zero additional traversal cost."""
+
+    return 0.0
+
+
 def manhattan_distance(a: Cell, b: Cell) -> float:
     """Compute Manhattan distance between two grid cells."""
 
@@ -71,7 +77,7 @@ def astar(
         return None
 
     if cost_fn is None:
-        cost_fn = lambda _cell: 0.0
+        cost_fn = zero_cost
 
     open_set: list[tuple[float, Cell]] = []
     heapq.heappush(open_set, (0.0, start))
