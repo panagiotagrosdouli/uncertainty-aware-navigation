@@ -5,21 +5,25 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from uncertainty_navigation.sensor_model import (
-    UNKNOWN,
-    observe_occupancy,
-    planning_occupancy_from_partial,
-    uncertainty_from_observation,
+from uncertainty_navigation.bayes_update import (
+    initialize_log_odds_grid,
+    occupancy_probability_grid,
+    planning_occupancy_from_probability,
+    uncertainty_from_probability,
+    update_log_odds_grid,
 )
+from uncertainty_navigation.sensor_model import UNKNOWN, observe_occupancy
 
 Cell = tuple[int, int]
 
 
 @dataclass
 class ExplorationState:
-    """Partial map state maintained by the robot during exploration."""
+    """Probabilistic partial map state maintained during exploration."""
 
     observed_occupancy: np.ndarray
+    log_odds: np.ndarray
+    occupancy_probability: np.ndarray
     uncertainty: np.ndarray
 
     @property
@@ -35,12 +39,19 @@ class ExplorationState:
         return float(np.mean(self.uncertainty))
 
 
-def initialize_exploration(shape: tuple[int, int]) -> ExplorationState:
-    """Create a fully unknown exploration state."""
+def initialize_exploration(shape: tuple[int, int], prior: float = 0.5) -> ExplorationState:
+    """Create a fully unknown probabilistic exploration state."""
 
     observed_occupancy = np.full(shape, fill_value=UNKNOWN, dtype=int)
-    uncertainty = uncertainty_from_observation(observed_occupancy)
-    return ExplorationState(observed_occupancy=observed_occupancy, uncertainty=uncertainty)
+    log_odds = initialize_log_odds_grid(shape, prior=prior)
+    occupancy_probability = occupancy_probability_grid(log_odds)
+    uncertainty = uncertainty_from_probability(occupancy_probability)
+    return ExplorationState(
+        observed_occupancy=observed_occupancy,
+        log_odds=log_odds,
+        occupancy_probability=occupancy_probability,
+        uncertainty=uncertainty,
+    )
 
 
 def update_exploration(
@@ -49,7 +60,7 @@ def update_exploration(
     robot_position: Cell,
     sensor_radius: int,
 ) -> ExplorationState:
-    """Update the partial map using a new sensor observation."""
+    """Update the partial map using a new probabilistic sensor observation."""
 
     new_observation = observe_occupancy(
         ground_truth_occupancy=ground_truth_occupancy,
@@ -59,8 +70,17 @@ def update_exploration(
     observed_occupancy = state.observed_occupancy.copy()
     newly_seen = new_observation != UNKNOWN
     observed_occupancy[newly_seen] = new_observation[newly_seen]
-    uncertainty = uncertainty_from_observation(observed_occupancy)
-    return ExplorationState(observed_occupancy=observed_occupancy, uncertainty=uncertainty)
+
+    log_odds = update_log_odds_grid(state.log_odds, new_observation)
+    occupancy_probability = occupancy_probability_grid(log_odds)
+    uncertainty = uncertainty_from_probability(occupancy_probability)
+
+    return ExplorationState(
+        observed_occupancy=observed_occupancy,
+        log_odds=log_odds,
+        occupancy_probability=occupancy_probability,
+        uncertainty=uncertainty,
+    )
 
 
 def planning_map_from_exploration(
@@ -69,7 +89,7 @@ def planning_map_from_exploration(
 ) -> np.ndarray:
     """Convert the exploration state into a planner-compatible occupancy grid."""
 
-    return planning_occupancy_from_partial(
-        state.observed_occupancy,
-        treat_unknown_as_free=treat_unknown_as_free,
-    )
+    planning_map = planning_occupancy_from_probability(state.occupancy_probability)
+    if treat_unknown_as_free:
+        planning_map[state.observed_occupancy == UNKNOWN] = 0
+    return planning_map
