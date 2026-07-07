@@ -27,6 +27,8 @@ def compute_replan(
     start: Cell,
     goal: Cell,
     lambda_uncertainty: float,
+    occupancy_probability=None,
+    mu_occupancy: float = 0.0,
 ) -> PlannerResult:
     """Compute a new plan from the current robot position."""
 
@@ -37,6 +39,8 @@ def compute_replan(
         start=start,
         goal=goal,
         lambda_uncertainty=lambda_uncertainty,
+        occupancy_probability=occupancy_probability,
+        mu_occupancy=mu_occupancy,
     )
 
 
