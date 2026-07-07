@@ -1,0 +1,39 @@
+experiment:
+  name: partial_observation_grid
+  description: Risk-aware planning using uncertainty induced by partial map observation.
+
+map:
+  type: grid
+  width: 50
+  height: 50
+  obstacle_density: 0.20
+  uncertainty_level: 1.0
+
+sensor:
+  model: circular_radius
+  radius: 12
+  treat_unknown_as_free: true
+
+planning:
+  baseline: astar
+  risk_aware: astar_uncertainty_weighted
+  lambda_uncertainty: [0.0, 0.5, 1.0, 2.0, 4.0]
+
+trials:
+  num_trials: 30
+  random_seeds: [0, 1, 2, 3, 4]
+
+metrics:
+  - success_rate
+  - collision_rate
+  - path_length
+  - traversal_time
+  - minimum_obstacle_distance
+  - accumulated_risk_cost
+  - replanning_frequency
+  - computation_time
+
+outputs:
+  directory: outputs/partial_observation_grid
+  save_paths: true
+  save_summary_csv: true
