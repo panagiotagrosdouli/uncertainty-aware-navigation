@@ -4,7 +4,17 @@
 
 This repository contains research code for studying uncertainty-aware navigation in previously unknown environments. The central question is how a mobile robot can use uncertainty estimates about the environment to make safer navigation decisions under partial observability.
 
-The project focuses on the connection between environment representation, uncertainty estimation, risk-sensitive planning, and navigation safety. It is intended as a focused research repository that can support a diploma thesis, technical report, or future paper submission.
+The project focuses on the connection between environment representation, uncertainty estimation, risk-sensitive planning, and navigation safety. It is intended as a focused research repository that can support a diploma thesis, technical report, paper submission, or future PhD research direction.
+
+## PhD-Level Research Positioning
+
+This repository is a focused planning benchmark within a broader robotics research portfolio on **robust autonomy under uncertainty**.
+
+Its role is to isolate one core question:
+
+> When a robot has an incomplete or uncertain map, can uncertainty-aware planning reduce unsafe behavior compared with classical shortest-path planning?
+
+This makes the repository useful as a clean experimental foundation for larger research projects such as [`DynNav`](https://github.com/panagiotagrosdouli/DynNav-Dynamic-Navigation-Rerouting-in-Unknown-Environments), where uncertainty-aware planning is extended toward richer autonomy stacks, replanning, returnability, and formal safety monitoring.
 
 ## Research Question
 
@@ -75,6 +85,16 @@ The first experiment compares a classical shortest-path planner with an uncertai
 The initial hypothesis is that adding an uncertainty penalty to the planning cost can reduce unsafe navigation behaviour, especially in partially observed maps, at the cost of longer or more conservative paths.
 
 See [`docs/first_experiment_plan.md`](docs/first_experiment_plan.md) for the initial experimental design.
+
+## Relationship to Other Repositories
+
+This repository connects to the following robotics research projects:
+
+- [`DynNav`](https://github.com/panagiotagrosdouli/DynNav-Dynamic-Navigation-Rerouting-in-Unknown-Environments): broader risk-sensitive navigation and replanning in unknown environments.
+- [`SHIELD-VIO`](https://github.com/panagiotagrosdouli/SHIELD-VIO): degradation-aware localization and self-healing VIO.
+- [`Adaptive Multi-Modal SLAM`](https://github.com/panagiotagrosdouli/Adaptive-Multi-Modal-SLAM-with-Uncertainty-Aware-Sensor-Fusion): uncertainty-aware sensor fusion and robust SLAM.
+
+Together, these repositories connect localization uncertainty, map uncertainty, and risk-aware planning into a coherent research direction for autonomous robotics.
 
 ## Installation
 
