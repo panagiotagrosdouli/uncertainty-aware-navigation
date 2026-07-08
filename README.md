@@ -4,9 +4,9 @@
 
 This repository contains research code for studying uncertainty-aware navigation in previously unknown environments. The central question is how a mobile robot can use uncertainty estimates about the environment to make safer navigation decisions under partial observability.
 
-The project focuses on the connection between environment representation, uncertainty estimation, risk-sensitive planning, and navigation safety. It is intended as a focused research repository that can support a diploma thesis, technical report, paper submission, or future PhD research direction.
+The project focuses on the connection between environment representation, uncertainty estimation, risk-sensitive planning, and navigation safety. It is intended as a focused research repository that can support a diploma thesis, technical report, or paper submission.
 
-## PhD-Level Research Positioning
+## Research Positioning
 
 This repository is a focused planning benchmark within a broader robotics research portfolio on **robust autonomy under uncertainty**.
 
@@ -14,7 +14,7 @@ Its role is to isolate one core question:
 
 > When a robot has an incomplete or uncertain map, can uncertainty-aware planning reduce unsafe behavior compared with classical shortest-path planning?
 
-This makes the repository useful as a clean experimental foundation for larger research projects such as [`DynNav`](https://github.com/panagiotagrosdouli/DynNav-Dynamic-Navigation-Rerouting-in-Unknown-Environments), where uncertainty-aware planning is extended toward richer autonomy stacks, replanning, returnability, and formal safety monitoring.
+This makes the repository useful as a clean experimental foundation for larger research projects such as [`DynNav`](https://github.com/panagiotagrosdouli/DynNav-Dynamic-Navigation-Rerouting-in-Unknown-Environments), where uncertainty-aware planning is extended toward richer autonomy stacks, replanning, returnability, and safety monitoring.
 
 ## Research Question
 
@@ -106,7 +106,7 @@ pip install -r requirements.txt
 
 ## Reproducibility
 
-Experiments should be configured through files in `configs/`, executed through scripts in `experiments/`, and reported with explicit random seeds, number of trials, and summary statistics.
+Experiments should be configured through files in `configs`, executed through scripts in `experiments`, and reported with explicit random seeds, number of trials, and summary statistics.
 
 ## Citation
 
