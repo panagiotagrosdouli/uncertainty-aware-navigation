@@ -1,3 +1,4 @@
-"""Research code for uncertainty-aware mobile robot navigation."""
+"""Uncertainty-aware navigation research package."""
 
+__all__ = ["__version__"]
 __version__ = "0.1.0"

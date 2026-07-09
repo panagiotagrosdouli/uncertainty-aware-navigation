@@ -1,34 +1,11 @@
-experiment:
-  name: first_grid_baseline
-  description: Classical shortest-path planning versus uncertainty-weighted risk-aware planning.
+# Deterministic synthetic diagnostic experiment for uncertainty-aware navigation.
+# Do not treat generated numbers as real-robot validation.
 
-map:
-  type: grid
-  width: 50
-  height: 50
-  obstacle_density: 0.20
-  uncertainty_level: 0.30
-
-planning:
-  baseline: astar
-  risk_aware: astar_uncertainty_weighted
-  lambda_uncertainty: [0.0, 0.5, 1.0, 2.0]
-
-trials:
-  num_trials: 30
-  random_seeds: [0, 1, 2, 3, 4]
-
-metrics:
-  - success_rate
-  - collision_rate
-  - path_length
-  - traversal_time
-  - minimum_obstacle_distance
-  - accumulated_risk_cost
-  - replanning_frequency
-  - computation_time
-
-outputs:
-  directory: outputs/first_grid_baseline
-  save_paths: true
-  save_summary_csv: true
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+lambda_uncertainty: 4.0
+lambda_occupancy: 0.0
+scenario:
+  size: 32
+  obstacle_density: 0.18
+  uncertainty_noise: 0.25
+  obstacle_threshold: 0.5
