@@ -4,19 +4,19 @@ This audit reviews `uncertainty-aware-navigation` as research software for MSc/P
 
 ## Overall assessment
 
-The project has a strong scientific premise: uncertainty-aware path planning is a focused and defensible robotics problem that connects naturally to SLAM, VIO, risk-aware navigation, and safe autonomy. The current repository is scientifically promising but still at prototype maturity because evaluation scripts, deterministic outputs, benchmark tables, and implementation evidence must be completed before any performance claims are made.
+The project has a strong scientific premise: uncertainty-aware path planning is a focused and defensible robotics problem that connects naturally to SLAM, VIO, risk-aware navigation, and safe autonomy. The repository now includes a minimal deterministic experiment scaffold, but it remains prototype maturity until generated outputs, plots, and broader ablations are reviewed and committed.
 
 ## Scores
 
 | Dimension | Score / 10 | Rationale |
 |---|---:|---|
-| Scientific quality | 7 | Clear research question and measurable hypothesis; missing completed experiments. |
-| Software engineering | 5 | Package metadata and tooling exist; planner API, tests, and experiment runner need hardening. |
-| Documentation | 6 | README and first experiment plan are now stronger; detailed API and reproducibility docs remain needed. |
-| Reproducibility | 5 | Configuration-driven intent exists; manifests and deterministic output validation are not complete. |
-| Presentation | 6 | Good portfolio positioning; needs generated diagrams, figures, and result tables. |
-| MSc readiness | 7 | Strong enough as a focused thesis project after experiment runner and tests are completed. |
-| PhD readiness | 5 | Needs deeper novelty, baselines, uncertainty calibration, and simulation/robot validation. |
+| Scientific quality | 7 | Clear research question, measurable hypothesis, and first synthetic diagnostic scaffold. |
+| Software engineering | 6 | Typed package modules, planner baseline, simulation generator, and tests now exist; API can still mature. |
+| Documentation | 7 | README, first experiment plan, audit, and reporting policy are clear; API docs remain needed. |
+| Reproducibility | 6 | Config-driven runner saves raw CSV, summary JSON, manifest, and generated report; artifacts still need CI integration. |
+| Presentation | 6 | Good portfolio positioning; needs generated heatmaps, path figures, and benchmark report pages. |
+| MSc readiness | 8 | Strong focused thesis foundation after first experiment and tests. |
+| PhD readiness | 6 | Needs deeper novelty, ablations, uncertainty calibration, dynamic replanning, and simulation/robot validation. |
 
 ## Scientific audit
 
@@ -26,12 +26,13 @@ The project has a strong scientific premise: uncertainty-aware path planning is 
 - The hypothesis is measurable: compare uncertainty-aware planning against shortest-path baselines.
 - The connection to broader robust autonomy research is clear.
 - The repository avoids unsupported state-of-the-art claims.
+- A deterministic synthetic diagnostic experiment now exists.
 
 ### High-priority issues
 
-1. **No validated benchmark results.** This matters because admissions committees and labs need to distinguish implemented evidence from planned work.
-2. **Uncertainty model needs formal definition.** This matters because different uncertainty-generation assumptions can change the experimental conclusion.
-3. **Baselines must be explicit.** This matters because A*, Dijkstra, and risk-weighted variants must share the same graph, map, and evaluation logic for fair comparison.
+1. **Ablation studies are still missing.** This matters because one uncertainty weight cannot establish robustness.
+2. **Uncertainty model needs deeper formal validation.** This matters because different uncertainty-generation assumptions can change the conclusion.
+3. **Baselines should expand.** This matters because A*, Dijkstra, weighted A*, and risk-aware variants should be compared under shared evaluation logic.
 
 ## Engineering audit
 
@@ -39,46 +40,58 @@ The project has a strong scientific premise: uncertainty-aware path planning is 
 
 - Python packaging is configured through `pyproject.toml`.
 - Ruff, Black, and pytest are configured.
-- The repository appears suitable for a clean `src/` layout.
+- Typed core data structures, planner, simulator, evaluator, and experiment runner now exist.
+- Failed planning returns structured results instead of unhandled errors.
 
 ### High-priority issues
 
-1. **Common planner interface required.** A shared `Planner` protocol or abstract base class should expose `plan(map, start, goal, config)`.
-2. **Typed data structures required.** Occupancy maps, uncertainty maps, paths, and metric records should use dataclasses or typed containers.
-3. **Experiment runner should produce machine-readable outputs.** CSV, JSON, and manifest files are required for reproducibility.
+1. **Planner interface should become protocol-based.** A shared `Planner` protocol would make new planners interchangeable.
+2. **Experiment runner should add visualization.** Path overlays and uncertainty heatmaps are needed for interpretability.
+3. **CI should upload generated reports as artifacts.** This would make reproducibility visible during pull requests.
 
 ## Documentation audit
 
 ### Strengths
 
-- README now gives scientific positioning, limitations, and reporting policy.
-- `docs/first_experiment_plan.md` defines an initial experimental design.
+- README gives scientific positioning, limitations, and reporting policy.
+- `docs/first_experiment_plan.md` defines the initial experimental design.
+- This audit records repository maturity and remaining gaps.
 
 ### High-priority issues
 
 1. **Missing API reference.** Users need documented planner, map, and evaluation modules.
-2. **Missing reproducibility guide.** Exact command structure, expected outputs, and result-validation rules must be explicit.
-3. **Missing architecture diagram.** A diagram helps readers understand data flow quickly.
+2. **Missing reproducibility guide.** Exact command structure, expected outputs, and result-validation rules should be expanded.
+3. **Missing architecture diagram.** A generated diagram helps readers understand data flow quickly.
 
 ## Architecture audit
 
-Recommended architecture:
+Current architecture:
 
 ```text
 src/uncertainty_navigation/
-  core/          # GridMap, UncertaintyMap, Path, Pose/GridIndex
-  planning/      # A*, Dijkstra, uncertainty-aware A*
-  evaluation/    # success, collision proxy, risk, path length, runtime
-  experiments/   # orchestration helpers
-  visualization/ # map and path plotting
-  utils/         # config loading, logging, seeds
+  core.py          # GridMap, PlanResult, TrialMetrics
+  planning.py      # A* and uncertainty-aware A*
+  simulation.py    # deterministic synthetic map generator
+  evaluation.py    # path-level metrics
+experiments/
+  run_first_experiment.py
 ```
 
-This separation prevents experiment scripts from becoming the only place where algorithms exist.
+Recommended next architecture:
+
+```text
+src/uncertainty_navigation/
+  core/            # maps, paths, typed states
+  planning/        # planner protocol, A*, Dijkstra, risk-aware variants
+  evaluation/      # success, collision proxy, risk, path length, runtime
+  experiments/     # orchestration helpers
+  visualization/   # map and path plotting
+  utils/           # config loading, logging, seeds
+```
 
 ## Performance audit
 
-Current priorities are correctness and reproducibility. Once correctness tests exist, performance should be measured with:
+Current priorities are correctness and reproducibility. Performance should be measured with:
 
 - runtime per map size;
 - node expansions;
@@ -90,42 +103,45 @@ No performance numbers should be reported before scripts generate them.
 
 ## Testing audit
 
-Required tests:
+Implemented tests now cover:
 
-- A* returns the known shortest path on toy maps.
-- Dijkstra and A* agree when the heuristic is admissible.
-- Uncertainty penalty changes route selection on a controlled map.
-- Blocked maps return a documented failure result, not an exception.
-- Seeded map generation is deterministic.
-- Metric computation handles empty and failed paths.
+- A* path recovery on an empty map.
+- Structured failure for blocked goals.
+- Route change under a high uncertainty penalty.
+- Deterministic synthetic map generation.
+- Valid start and goal construction.
+
+Required next tests:
+
+- Dijkstra/A* equivalence with admissible heuristic.
+- No-path maps.
+- Metric computation for failed plans.
+- Experiment runner smoke test with a temporary output directory.
 
 ## Reproducibility audit
 
-A valid experiment run should save:
+The first experiment runner now saves:
 
-- configuration file copy;
-- random seeds;
-- Git commit SHA;
-- Python version and platform;
-- dependency versions;
-- raw per-trial results;
-- aggregated summary;
-- plots generated from raw results.
+- raw per-trial CSV;
+- aggregate summary JSON;
+- manifest JSON;
+- generated Markdown report.
+
+The next step is to include dependency versions and CI-generated artifacts.
 
 ## UX / research presentation audit
 
-The repository should expose one command for the first experiment and one command for figure generation. The README should show expected output file names, but not numerical values until generated and committed.
+The repository now exposes one command for the first experiment. It should next expose one command for figure generation and one command for report aggregation.
 
 ## Priority roadmap
 
 | Priority | Improvement | Motivation |
 |---:|---|---|
-| P0 | Implement deterministic first experiment runner | Required before any research claim. |
-| P0 | Add tests for planner correctness | Prevents invalid comparisons. |
-| P0 | Add result manifest generation | Makes runs reproducible and auditable. |
-| P1 | Add architecture and pipeline diagrams | Improves research presentation. |
-| P1 | Add benchmark table template | Encourages honest reporting without fake values. |
-| P2 | Add ROS2/Nav2 notes only after core benchmark is stable | Avoids over-scoping. |
+| P0 | Run CI and fix any lint/test failures | Required before merge. |
+| P0 | Add experiment runner smoke test | Prevents silent breakage of reproducibility interface. |
+| P1 | Add generated uncertainty/path visualizations | Improves research presentation and debugging. |
+| P1 | Add benchmark table generator | Encourages honest reporting from raw outputs. |
+| P2 | Add planner protocol and Dijkstra baseline | Improves extensibility and baseline fairness. |
 
 ## Completed in this hardening pass
 
@@ -133,7 +149,8 @@ The repository should expose one command for the first experiment and one comman
 - Added this repository audit.
 - Added contribution, conduct, security, changelog, Docker, pre-commit, and GitHub template scaffolding.
 - Strengthened CI quality gates.
+- Added typed grid, planner, simulator, evaluator, deterministic experiment runner, config, and tests.
 
 ## Remaining future work
 
-The next scientific milestone is to implement and validate the first experiment end-to-end, then generate plots and tables from deterministic outputs.
+The next scientific milestone is to generate and review first-experiment artifacts, add visualizations, and expand the baseline set without overstating synthetic results.

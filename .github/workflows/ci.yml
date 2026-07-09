@@ -7,8 +7,13 @@ on:
     branches: [main]
 
 jobs:
-  tests:
+  quality:
+    name: Python quality checks
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - name: Checkout repository
@@ -17,15 +22,28 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
+          cache: pip
 
       - name: Install package
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          python -m pip install -e ".[dev]"
 
-      - name: Lint
+      - name: Ruff lint
         run: ruff check src tests experiments
 
-      - name: Test
-        run: pytest
+      - name: Black format check
+        run: black --check src tests experiments
+
+      - name: Tests
+        run: pytest --maxfail=1 --disable-warnings
+
+      - name: Generate first experiment artifacts
+        run: python experiments/run_first_experiment.py --config configs/first_experiment.yaml --output results/first_experiment
+
+      - name: Upload first experiment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: first-experiment-${{ matrix.python-version }}
+          path: results/first_experiment

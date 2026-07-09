@@ -15,6 +15,12 @@ The format follows the spirit of Keep a Changelog, and versioning should follow 
 - GitHub issue and pull request templates.
 - Dockerfile and pre-commit configuration.
 - Stronger CI checks for Ruff, Black, and pytest.
+- Typed grid-map, planner-result, and trial-metric data structures.
+- Deterministic A*/uncertainty-aware A* planner.
+- Synthetic diagnostic grid generator with controlled uncertain and low-uncertainty route alternatives.
+- Evaluation metrics for path length, collision proxy, uncertainty exposure, occupancy exposure, obstacle clearance, expanded nodes, runtime, and planner cost.
+- Config-driven first-experiment runner that saves raw CSV, aggregate JSON, manifest JSON, and generated Markdown report.
+- Unit tests for planner correctness and deterministic simulation.
 
 ### Changed
 
@@ -23,7 +29,7 @@ The format follows the spirit of Keep a Changelog, and versioning should follow 
 
 ### Pending
 
-- Deterministic first-experiment runner.
-- Planner correctness tests.
-- Experiment manifest generation.
 - Generated architecture and pipeline diagrams.
+- Plotting scripts for publication-ready heatmaps and path overlays.
+- CI artifact upload for generated reports.
+- ROS2/Nav2 integration notes after the core static benchmark stabilizes.
