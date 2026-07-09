@@ -28,9 +28,14 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=Path("configs/first_experiment.yaml"))
     parser.add_argument("--output", type=Path, default=Path("results/first_experiment"))
     args = parser.parse_args()
+    run_experiment(args.config, args.output)
 
-    config = _load_config(args.config)
-    args.output.mkdir(parents=True, exist_ok=True)
+
+def run_experiment(config_path: Path, output_path: Path) -> dict[str, dict[str, float]]:
+    """Run the configured experiment and save raw, summary, manifest, and report artifacts."""
+
+    config = _load_config(config_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     seeds = [int(seed) for seed in config.get("seeds", [0, 1, 2, 3, 4])]
     scenario_cfg = ScenarioConfig(**config.get("scenario", {}))
@@ -51,13 +56,14 @@ def main() -> None:
             metrics = evaluate_path(seed, grid, result)
             rows.append(asdict(metrics))
 
-    raw_csv = args.output / "trials.csv"
+    raw_csv = output_path / "trials.csv"
     _write_csv(raw_csv, rows)
     summary = _summarize(rows)
-    (args.output / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    manifest = _manifest(args.config, args.output, seeds, config)
-    (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    _write_report(args.output / "REPORT.md", summary, manifest)
+    (output_path / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    manifest = _manifest(config_path, output_path, seeds, config)
+    (output_path / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    _write_report(output_path / "REPORT.md", summary, manifest)
+    return summary
 
 
 def _load_config(path: Path) -> dict[str, Any]:
