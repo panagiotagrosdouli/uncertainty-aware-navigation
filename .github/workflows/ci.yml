@@ -38,3 +38,12 @@ jobs:
 
       - name: Tests
         run: pytest --maxfail=1 --disable-warnings
+
+      - name: Generate first experiment artifacts
+        run: python experiments/run_first_experiment.py --config configs/first_experiment.yaml --output results/first_experiment
+
+      - name: Upload first experiment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: first-experiment-${{ matrix.python-version }}
+          path: results/first_experiment
