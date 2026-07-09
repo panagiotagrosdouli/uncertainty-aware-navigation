@@ -2,7 +2,15 @@ from pathlib import Path
 
 import numpy as np
 
-from uanav.demo import ScenarioConfig, astar, build_world, generate_figures, make_demo_media, run_synthetic_demo, validate_path
+from uanav.demo import (
+    ScenarioConfig,
+    astar,
+    build_world,
+    generate_figures,
+    make_demo_media,
+    run_synthetic_demo,
+    validate_path,
+)
 
 
 def test_synthetic_world_maps_and_planner(tmp_path):
