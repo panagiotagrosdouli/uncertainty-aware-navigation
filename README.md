@@ -1,117 +1,191 @@
 # Uncertainty-Aware Navigation
 
-**Risk-aware mobile robot navigation under map uncertainty**
+[![CI](https://github.com/panagiotagrosdouli/uncertainty-aware-navigation/actions/workflows/ci.yml/badge.svg)](https://github.com/panagiotagrosdouli/uncertainty-aware-navigation/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-research%20prototype-orange)
 
-This repository contains research code for studying uncertainty-aware navigation in previously unknown environments. The central question is how a mobile robot can use uncertainty estimates about the environment to make safer navigation decisions under partial observability.
+**Uncertainty-Aware Navigation is a research prototype for evaluating risk-sensitive mobile-robot path planning under incomplete and uncertain maps.**
 
-The project focuses on the connection between environment representation, uncertainty estimation, risk-sensitive planning, and navigation safety. It is intended as a focused research repository that can support a diploma thesis, technical report, or paper submission.
+> Central research question: **Can a robot reduce unsafe navigation behaviour by explicitly incorporating map uncertainty into planning cost, rather than optimizing only shortest-path geometry?**
 
-## Research Positioning
+This repository is intentionally conservative. It provides a reproducible experimental scaffold and does **not** claim state-of-the-art performance, validated hardware behaviour, or benchmark conclusions until generated results, configurations, seeds, and environment details are committed.
 
-This repository is a focused planning benchmark within a broader robotics research portfolio on **robust autonomy under uncertainty**.
+---
 
-Its role is to isolate one core question:
+## Scientific motivation
 
-> When a robot has an incomplete or uncertain map, can uncertainty-aware planning reduce unsafe behavior compared with classical shortest-path planning?
+Classical grid planners such as A* and Dijkstra often treat each traversable cell as equally safe once it is not marked occupied. In partially observed environments, that assumption is fragile: unknown cells, noisy observations, sparse sensing, and stale maps can create paths that are geometrically short but operationally unsafe. This project isolates that research problem and studies whether uncertainty-weighted cost functions improve safety-related metrics under controlled map uncertainty.
 
-This makes the repository useful as a clean experimental foundation for larger research projects such as [`DynNav`](https://github.com/panagiotagrosdouli/DynNav-Dynamic-Navigation-Rerouting-in-Unknown-Environments), where uncertainty-aware planning is extended toward richer autonomy stacks, replanning, returnability, and safety monitoring.
+The repository is designed as a focused building block in a robotics portfolio on robust autonomy under uncertainty, complementing broader projects on dynamic rerouting, SLAM/VIO uncertainty, and safety-aware perception.
 
-## Research Question
+---
 
-How can a mobile robot use map uncertainty to reduce unsafe navigation behaviour in previously unknown environments?
+## Problem formulation
 
-## Core Idea
-
-Classical navigation planners often optimize geometric cost, path length, or traversal time. In unknown environments, however, the robot must also reason about uncertainty: unknown space, noisy observations, incomplete maps, and dynamic changes.
-
-This project investigates a planning formulation in which navigation cost is influenced not only by distance, but also by estimated environmental uncertainty and risk.
-
-## Scope
-
-This repository focuses on one research problem:
-
-**uncertainty-aware risk-sensitive navigation for mobile robots.**
-
-It does not attempt to address language-based planning, multi-robot coordination, foundation models, semantic mapping, or general autonomous driving. These topics are intentionally outside the scope of this repository.
-
-## Method Overview
-
-The planned research pipeline consists of:
-
-1. Environment representation using occupancy and uncertainty maps.
-2. Uncertainty estimation from partial observations.
-3. Risk-aware path planning using uncertainty-weighted cost functions.
-4. Safety-oriented replanning under uncertain map conditions.
-5. Evaluation against classical navigation baselines.
-
-## Planned Evaluation
-
-The method will be evaluated against baseline planners such as A*, Dijkstra, or standard ROS navigation pipelines using controlled simulation scenarios.
-
-Evaluation metrics will include:
-
-- success rate
-- collision rate
-- path length
-- traversal time
-- minimum obstacle distance
-- accumulated risk cost
-- replanning frequency
-- computation time
-
-All reported results should include the number of trials, random seeds, and mean ± standard deviation.
-
-## Repository Structure
+Let `G = (V, E)` be a grid graph. Each cell `v in V` has occupancy probability `p_occ(v)` and uncertainty `u(v) in [0, 1]`. A path `pi = (v_0, ..., v_T)` is evaluated with a risk-sensitive objective:
 
 ```text
-.
-├── configs/          # Experiment and planner configurations
-├── docs/             # Technical notes and methodology
-├── experiments/      # Reproducible experiment scripts
-├── figures/          # Diagrams and result figures
-├── paper/            # Notes toward a technical report or paper
-├── src/              # Source code
-└── README.md
+J(pi) = sum_t [ c_geom(v_t, v_{t+1})
+              + lambda_uncertainty * u(v_t)
+              + lambda_occupancy * p_occ(v_t) ]
 ```
 
-## Current Status
+The first experiment compares a classical geometric planner with an uncertainty-aware planner across deterministic random seeds and controlled grid-map scenarios. Results should be reported only when they are generated by scripts and traceable to the exact configuration.
 
-This repository is at the initial research-setup stage. The first development target is a reproducible baseline comparing classical shortest-path planning with uncertainty-weighted risk-aware planning in controlled grid-map environments.
+---
 
-## First Experiment
+## System architecture
 
-The first experiment compares a classical shortest-path planner with an uncertainty-weighted planner on controlled grid maps.
+```text
+configs/                 YAML experiment and planner settings
+docs/                    scientific protocol, audit, and methodology
+experiments/             reproducible experiment entry points
+figures/                 generated diagrams and result figures
+paper/                   manuscript-facing notes and report fragments
+src/                     installable Python package
+tests/                   unit and regression tests
+.github/                 CI, issue templates, and PR template
+```
 
-The initial hypothesis is that adding an uncertainty penalty to the planning cost can reduce unsafe navigation behaviour, especially in partially observed maps, at the cost of longer or more conservative paths.
+Runtime pipeline:
 
-See [`docs/first_experiment_plan.md`](docs/first_experiment_plan.md) for the initial experimental design.
+```text
+Scenario config
+      |
+      v
+Grid-map generation -> partial observation / uncertainty model
+      |
+      v
+Classical planner + uncertainty-aware planner
+      |
+      v
+Path safety evaluation on ground-truth map
+      |
+      v
+CSV/JSON metrics, plots, and reproducibility manifest
+```
 
-## Relationship to Other Repositories
+---
 
-This repository connects to the following robotics research projects:
+## Implemented / Prototype / Planned
 
-- [`DynNav`](https://github.com/panagiotagrosdouli/DynNav-Dynamic-Navigation-Rerouting-in-Unknown-Environments): broader risk-sensitive navigation and replanning in unknown environments.
-- [`SHIELD-VIO`](https://github.com/panagiotagrosdouli/SHIELD-VIO): degradation-aware localization and self-healing VIO.
-- [`Adaptive Multi-Modal SLAM`](https://github.com/panagiotagrosdouli/Adaptive-Multi-Modal-SLAM-with-Uncertainty-Aware-Sensor-Fusion): uncertainty-aware sensor fusion and robust SLAM.
+| Component | Status | Evidence / expectation |
+|---|---:|---|
+| Research problem definition | Implemented | README and `docs/first_experiment_plan.md` |
+| Python package metadata | Implemented | `pyproject.toml` |
+| Ruff / Black / pytest configuration | Implemented | `pyproject.toml`, CI workflow |
+| First experiment design | Implemented | `docs/first_experiment_plan.md` |
+| Classical A* / Dijkstra baseline | Prototype | should be covered by unit tests before reporting results |
+| Uncertainty-weighted planner | Prototype | must expose `lambda_uncertainty` and deterministic seeds |
+| Reproducible experiment runner | Prototype | expected under `experiments/` with config-driven execution |
+| Benchmark tables | Planned | no benchmark numbers are claimed in this README |
+| ROS / Nav2 integration | Planned | out of current scope until runtime interface exists |
+| Hardware validation | Planned | no robot experiment is claimed |
 
-Together, these repositories connect localization uncertainty, map uncertainty, and risk-aware planning into a coherent research direction for autonomous robotics.
+---
 
 ## Installation
 
 ```bash
+git clone https://github.com/panagiotagrosdouli/uncertainty-aware-navigation.git
+cd uncertainty-aware-navigation
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -e '.[dev]'
 ```
 
-## Reproducibility
+Minimal dependency installation is also supported:
 
-Experiments should be configured through files in `configs`, executed through scripts in `experiments`, and reported with explicit random seeds, number of trials, and summary statistics.
+```bash
+python -m pip install -r requirements.txt
+```
+
+---
+
+## Quick start
+
+Run quality checks:
+
+```bash
+ruff check src tests experiments
+black --check src tests experiments
+pytest
+```
+
+Run the first planned experiment once the runner is available:
+
+```bash
+python experiments/run_first_experiment.py --config configs/first_experiment.yaml --output results/first_experiment
+```
+
+The command above defines the intended reproducible interface. If the script or config is missing, the repository is not yet ready to report experimental results.
+
+---
+
+## Evaluation protocol
+
+Every reported table must include:
+
+- planner name and exact configuration;
+- number of trials and random seeds;
+- map size, obstacle density, and uncertainty-generation parameters;
+- success rate, collision rate, path length, accumulated uncertainty/risk cost, minimum obstacle distance, and runtime;
+- mean ± standard deviation across seeds;
+- hardware/software environment for runtime claims.
+
+Synthetic experiments are useful for algorithmic diagnosis but should not be presented as real-world robotic validation.
+
+---
+
+## Reproducibility policy
+
+1. Configuration files define experiments; command-line flags should only override documented fields.
+2. Random seeds are required for map generation, start/goal sampling, and noisy observations.
+3. Generated results must include a manifest containing command, config, seed list, package version, Python version, and Git commit SHA.
+4. Benchmark claims are valid only when their raw outputs are committed or archived with a permanent DOI.
+5. No datasets, maps, or logs may be redistributed unless their license permits it.
+
+---
+
+## Relationship to other repositories
+
+This project is intentionally narrow. It should be highlighted as a clean planning benchmark and used together with broader repositories:
+
+- `DynNav`: dynamic risk-aware rerouting and mission safety supervision.
+- `SHIELD-VIO`: localization uncertainty and safety shielding for VIO failures.
+- `Adaptive Multi-Modal SLAM`: uncertainty-aware sensor fusion for robust SLAM.
+
+Together these repositories form a coherent research direction: **localization uncertainty -> map uncertainty -> risk-aware planning -> safety-aware autonomy**.
+
+---
+
+## Limitations
+
+- The repository is currently a research prototype, not a deployed navigation stack.
+- The first target is grid-map planning, not continuous kinodynamic planning.
+- No real robot, Gazebo, Webots, Isaac Sim, ROS2, or Nav2 evaluation is currently claimed.
+- No benchmark numbers are included because they must be generated through reproducible scripts first.
+- Safety claims require formal analysis and physical validation beyond the present scaffold.
+
+---
+
+## Roadmap
+
+1. Finalize deterministic grid-map generator and planner interfaces.
+2. Implement A*, Dijkstra, and uncertainty-weighted A* baselines behind a common API.
+3. Add experiment manifests, CSV/JSON outputs, and plotting scripts.
+4. Add tests for planner optimality on small maps and regression tests for seeded experiments.
+5. Generate benchmark tables only from committed configurations.
+6. Extend toward dynamic replanning and ROS2/Nav2 once the static benchmark is reproducible.
+
+---
 
 ## Citation
 
-If you use this repository, please cite it using the metadata in [`CITATION.cff`](CITATION.cff).
+If you use this repository, cite the software metadata in [`CITATION.cff`](CITATION.cff). Until a manuscript or preprint exists, cite it as research software rather than a peer-reviewed method.
 
 ## License
 
-This project is released under the MIT License. See [`LICENSE`](LICENSE) for details.
+MIT License. See [`LICENSE`](LICENSE).

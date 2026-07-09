@@ -1,0 +1,36 @@
+name: Research task
+description: Propose an experiment, evaluation, documentation, or reproducibility task
+title: "[Research]: "
+labels: [research]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Scientific motivation
+      description: What research question or validity gap does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_work
+    attributes:
+      label: Proposed work
+      description: Describe the method, implementation, or documentation change.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: What tests, metrics, seeds, configs, or plots will demonstrate correctness?
+    validations:
+      required: true
+  - type: dropdown
+    id: maturity
+    attributes:
+      label: Maturity label
+      options:
+        - Implemented
+        - Prototype
+        - Planned
+    validations:
+      required: true
