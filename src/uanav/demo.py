@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path
 import heapq
 import json
 import math
 import time
+from dataclasses import dataclass
+from pathlib import Path
 
 import imageio.v2 as imageio
 import matplotlib.pyplot as plt
@@ -61,10 +61,10 @@ def build_world(cfg: ScenarioConfig) -> tuple[np.ndarray, np.ndarray, np.ndarray
     occ[5:10, 32:36] = 1
     occ[20:26, 7:11] = 1
     for _ in range(65):
-        r = int(rng.integers(2, cfg.height - 2))
-        c = int(rng.integers(2, cfg.width - 2))
-        if (r, c) not in [cfg.start, cfg.goal] and rng.random() < 0.28:
-            occ[r, c] = 1
+        row = int(rng.integers(2, cfg.height - 2))
+        col = int(rng.integers(2, cfg.width - 2))
+        if (row, col) not in [cfg.start, cfg.goal] and rng.random() < 0.28:
+            occ[row, col] = 1
     occ[cfg.start] = occ[cfg.goal] = 0
     belief = np.full_like(occ, 0.5, dtype=float)
     belief[occ == 1] = 0.92
@@ -81,8 +81,8 @@ def build_world(cfg: ScenarioConfig) -> tuple[np.ndarray, np.ndarray, np.ndarray
 
 
 def normalized_uncertainty(belief: np.ndarray, unknown: np.ndarray) -> np.ndarray:
-    p = np.clip(belief, 1e-6, 1 - 1e-6)
-    entropy = -(p * np.log2(p) + (1 - p) * np.log2(1 - p))
+    probability = np.clip(belief, 1e-6, 1 - 1e-6)
+    entropy = -(probability * np.log2(probability) + (1 - probability) * np.log2(1 - probability))
     frontier = unknown.astype(float)
     for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
         frontier += 0.25 * np.roll(np.roll(unknown, dx, axis=0), dy, axis=1)
@@ -105,7 +105,18 @@ def recoverability_map(occupancy: np.ndarray, risk: np.ndarray) -> np.ndarray:
     return np.clip(score, 0, 1)
 
 
-def astar(occupancy: np.ndarray, start: Point, goal: Point, uncertainty: np.ndarray | None = None, risk: np.ndarray | None = None, recoverability: np.ndarray | None = None, lambda_uncertainty: float = 0.0, lambda_risk: float = 0.0, lambda_recoverability: float = 0.0, heuristic: bool = True) -> tuple[list[Point], dict]:
+def astar(
+    occupancy: np.ndarray,
+    start: Point,
+    goal: Point,
+    uncertainty: np.ndarray | None = None,
+    risk: np.ndarray | None = None,
+    recoverability: np.ndarray | None = None,
+    lambda_uncertainty: float = 0.0,
+    lambda_risk: float = 0.0,
+    lambda_recoverability: float = 0.0,
+    heuristic: bool = True,
+) -> tuple[list[Point], dict]:
     t0 = time.perf_counter()
     uncertainty = np.zeros_like(occupancy, dtype=float) if uncertainty is None else uncertainty
     risk = np.zeros_like(occupancy, dtype=float) if risk is None else risk
@@ -122,7 +133,13 @@ def astar(occupancy: np.ndarray, start: Point, goal: Point, uncertainty: np.ndar
         for nb in neighbors(current, occupancy.shape):
             if occupancy[nb] >= 1:
                 continue
-            step = max(0.05, 1 + lambda_uncertainty * uncertainty[nb] + lambda_risk * risk[nb] - lambda_recoverability * recoverability[nb])
+            step = max(
+                0.05,
+                1
+                + lambda_uncertainty * uncertainty[nb]
+                + lambda_risk * risk[nb]
+                - lambda_recoverability * recoverability[nb],
+            )
             new_cost = cost[current] + float(step)
             if new_cost < cost.get(nb, math.inf):
                 cost[nb] = new_cost
@@ -136,7 +153,11 @@ def astar(occupancy: np.ndarray, start: Point, goal: Point, uncertainty: np.ndar
             path.append(cur)
             cur = came[cur]
         path.reverse()
-    return path, {"planning_time_s": time.perf_counter() - t0, "expanded_nodes": expanded, "cost": cost.get(goal, math.inf)}
+    return path, {
+        "planning_time_s": time.perf_counter() - t0,
+        "expanded_nodes": expanded,
+        "cost": cost.get(goal, math.inf),
+    }
 
 
 def neighbors(point: Point, shape: tuple[int, int]):
@@ -147,10 +168,23 @@ def neighbors(point: Point, shape: tuple[int, int]):
 
 
 def validate_path(path: list[Point], occupancy: np.ndarray) -> bool:
-    return bool(path) and all(occupancy[p] == 0 for p in path) and all(abs(a[0] - b[0]) + abs(a[1] - b[1]) == 1 for a, b in zip(path, path[1:]))
+    return (
+        bool(path)
+        and all(occupancy[p] == 0 for p in path)
+        and all(abs(a[0] - b[0]) + abs(a[1] - b[1]) == 1 for a, b in zip(path, path[1:]))
+    )
 
 
-def plan(cfg: ScenarioConfig, occ: np.ndarray, start: Point, goal: Point, uncertainty: np.ndarray, risk: np.ndarray, recoverability: np.ndarray, planner: str | None = None):
+def plan(
+    cfg: ScenarioConfig,
+    occ: np.ndarray,
+    start: Point,
+    goal: Point,
+    uncertainty: np.ndarray,
+    risk: np.ndarray,
+    recoverability: np.ndarray,
+    planner: str | None = None,
+):
     planner = planner or cfg.planner
     if planner == "dijkstra":
         return astar(occ, start, goal, heuristic=False)
@@ -159,11 +193,28 @@ def plan(cfg: ScenarioConfig, occ: np.ndarray, start: Point, goal: Point, uncert
     if planner == "uncertainty_aware_astar":
         return astar(occ, start, goal, uncertainty=uncertainty, lambda_uncertainty=cfg.lambda_uncertainty)
     if planner == "recoverability_aware_astar":
-        return astar(occ, start, goal, uncertainty, risk, recoverability, cfg.lambda_uncertainty, cfg.lambda_risk, cfg.lambda_recoverability)
+        return astar(
+            occ,
+            start,
+            goal,
+            uncertainty,
+            risk,
+            recoverability,
+            cfg.lambda_uncertainty,
+            cfg.lambda_risk,
+            cfg.lambda_recoverability,
+        )
     return astar(occ, start, goal, uncertainty, risk, recoverability, cfg.lambda_uncertainty, cfg.lambda_risk, 0.0)
 
 
-def safety_state(pos: Point, risk: np.ndarray, uncertainty: np.ndarray, recoverability: np.ndarray, cfg: ScenarioConfig, blocked: bool = False) -> str:
+def safety_state(
+    pos: Point,
+    risk: np.ndarray,
+    uncertainty: np.ndarray,
+    recoverability: np.ndarray,
+    cfg: ScenarioConfig,
+    blocked: bool = False,
+) -> str:
     rv, uv, qv = float(risk[pos]), float(uncertainty[pos]), float(recoverability[pos])
     if blocked:
         return "REROUTE"
@@ -194,7 +245,18 @@ def run_synthetic_demo(cfg: ScenarioConfig = ScenarioConfig()) -> dict:
     for step in range(cfg.max_steps):
         blocked = not path or idx >= len(path)
         state = safety_state(pos, risk, uncertainty, recoverability, cfg, blocked)
-        events.append({"step": step, "row": pos[0], "col": pos[1], "risk": float(risk[pos]), "uncertainty": float(uncertainty[pos]), "recoverability": float(recoverability[pos]), "state": state, "label": "Synthetic Demo"})
+        events.append(
+            {
+                "step": step,
+                "row": pos[0],
+                "col": pos[1],
+                "risk": float(risk[pos]),
+                "uncertainty": float(uncertainty[pos]),
+                "recoverability": float(recoverability[pos]),
+                "state": state,
+                "label": "Synthetic Demo",
+            }
+        )
         if pos == cfg.goal:
             break
         if state in {"REROUTE", "STOP"} or blocked or step in {35, 70}:
@@ -213,23 +275,78 @@ def run_synthetic_demo(cfg: ScenarioConfig = ScenarioConfig()) -> dict:
         trajectory.append(pos)
         idx += 1
     success = bool(pos == cfg.goal)
-    metrics = compute_metrics(trajectory, planned_paths, risk, uncertainty, recoverability, times, success, collisions, events)
+    metrics = compute_metrics(
+        trajectory, planned_paths, risk, uncertainty, recoverability, times, success, collisions, events
+    )
     np.save(out / "metrics" / "occupancy_grid.npy", occ)
     np.save(out / "metrics" / "belief_map.npy", belief)
     np.save(out / "metrics" / "uncertainty_map.npy", uncertainty)
     np.save(out / "metrics" / "risk_map.npy", risk)
     np.save(out / "metrics" / "recoverability_map.npy", recoverability)
-    pd.DataFrame([{"step": i, "row": p[0], "col": p[1], "label": "Synthetic Demo"} for i, p in enumerate(trajectory)]).to_csv(out / "metrics" / "executed_trajectory.csv", index=False)
+    pd.DataFrame(
+        [{"step": i, "row": p[0], "col": p[1], "label": "Synthetic Demo"} for i, p in enumerate(trajectory)]
+    ).to_csv(out / "metrics" / "executed_trajectory.csv", index=False)
     pd.DataFrame(events).to_csv(out / "metrics" / "safety_events.csv", index=False)
     pd.DataFrame([metrics]).to_csv(out / "metrics" / "metrics.csv", index=False)
     save_json(out / "metrics" / "summary.json", metrics)
-    save_json(out / "metrics" / "planned_paths.json", {"label": "Synthetic Demo", "paths": [[list(p) for p in path] for path in planned_paths]})
-    save_json(out / "metrics" / "mission_summary.json", {"label": "Synthetic Demo", "success": success, "limitations": "Synthetic grid-world only; not hardware validation."})
-    return {"config": cfg, "occupancy": occ, "belief": belief, "unknown": unknown, "uncertainty": uncertainty, "risk": risk, "recoverability": recoverability, "trajectory": trajectory, "planned_paths": planned_paths, "safety_events": events, "metrics": metrics, "output_dir": str(out)}
+    save_json(
+        out / "metrics" / "planned_paths.json",
+        {"label": "Synthetic Demo", "paths": [[list(p) for p in path] for path in planned_paths]},
+    )
+    save_json(
+        out / "metrics" / "mission_summary.json",
+        {
+            "label": "Synthetic Demo",
+            "success": success,
+            "limitations": "Synthetic grid-world only; not hardware validation.",
+        },
+    )
+    return {
+        "config": cfg,
+        "occupancy": occ,
+        "belief": belief,
+        "unknown": unknown,
+        "uncertainty": uncertainty,
+        "risk": risk,
+        "recoverability": recoverability,
+        "trajectory": trajectory,
+        "planned_paths": planned_paths,
+        "safety_events": events,
+        "metrics": metrics,
+        "output_dir": str(out),
+    }
 
 
-def compute_metrics(trajectory: list[Point], planned_paths: list[list[Point]], risk: np.ndarray, uncertainty: np.ndarray, recoverability: np.ndarray, times: list[float], success: bool, collisions: int, events: list[dict]) -> dict:
-    return {"label": "Synthetic Demo", "synthetic_demo": True, "path_length": len(planned_paths[-1]) if planned_paths else 0, "executed_trajectory_length": len(trajectory), "travel_time_steps": max(0, len(trajectory) - 1), "planning_time_total_s": float(sum(times)), "planning_time_mean_s": float(np.mean(times)) if times else 0.0, "success_rate": 1.0 if success else 0.0, "collision_count": int(collisions), "near_miss_count": int(sum(1 for p in trajectory if risk[p] > 0.55)), "risk_exposure": float(sum(risk[p] for p in trajectory)), "uncertainty_exposure": float(sum(uncertainty[p] for p in trajectory)), "recoverability_exposure": float(np.mean([recoverability[p] for p in trajectory])), "mission_completion": bool(success), "safety_intervention_count": int(sum(1 for e in events if e["state"] != "NORMAL")), "replanning_count": max(0, len(planned_paths) - 1), "average_replanning_latency_s": float(np.mean(times[1:])) if len(times) > 1 else 0.0}
+def compute_metrics(
+    trajectory: list[Point],
+    planned_paths: list[list[Point]],
+    risk: np.ndarray,
+    uncertainty: np.ndarray,
+    recoverability: np.ndarray,
+    times: list[float],
+    success: bool,
+    collisions: int,
+    events: list[dict],
+) -> dict:
+    return {
+        "label": "Synthetic Demo",
+        "synthetic_demo": True,
+        "path_length": len(planned_paths[-1]) if planned_paths else 0,
+        "executed_trajectory_length": len(trajectory),
+        "travel_time_steps": max(0, len(trajectory) - 1),
+        "planning_time_total_s": float(sum(times)),
+        "planning_time_mean_s": float(np.mean(times)) if times else 0.0,
+        "success_rate": 1.0 if success else 0.0,
+        "collision_count": int(collisions),
+        "near_miss_count": int(sum(1 for p in trajectory if risk[p] > 0.55)),
+        "risk_exposure": float(sum(risk[p] for p in trajectory)),
+        "uncertainty_exposure": float(sum(uncertainty[p] for p in trajectory)),
+        "recoverability_exposure": float(np.mean([recoverability[p] for p in trajectory])),
+        "mission_completion": bool(success),
+        "safety_intervention_count": int(sum(1 for e in events if e["state"] != "NORMAL")),
+        "replanning_count": max(0, len(planned_paths) - 1),
+        "average_replanning_latency_s": float(np.mean(times[1:])) if len(times) > 1 else 0.0,
+    }
 
 
 def _plot_path(ax, path: list[Point], **kwargs) -> None:
@@ -242,39 +359,84 @@ def generate_figures(result: dict | None = None) -> list[str]:
     out = ensure_dirs(result["output_dir"])
     figdir = out / "figures"
     paths: list[str] = []
-    for name, field, cmap in [("occupancy_grid", result["occupancy"], "gray_r"), ("belief_map", result["belief"], "magma"), ("uncertainty_heatmap", result["uncertainty"], "viridis"), ("risk_heatmap", result["risk"], "inferno"), ("recoverability_heatmap", result["recoverability"], "cividis")]:
+    map_specs = [
+        ("occupancy_grid", result["occupancy"], "gray_r"),
+        ("belief_map", result["belief"], "magma"),
+        ("uncertainty_heatmap", result["uncertainty"], "viridis"),
+        ("risk_heatmap", result["risk"], "inferno"),
+        ("recoverability_heatmap", result["recoverability"], "cividis"),
+    ]
+    for name, field, cmap in map_specs:
         fig, ax = plt.subplots(figsize=(7, 5))
         im = ax.imshow(field, cmap=cmap)
         ax.set_title(name.replace("_", " ").title() + " — Synthetic Demo")
-        ax.set_xticks([]); ax.set_yticks([])
+        ax.set_xticks([])
+        ax.set_yticks([])
         fig.colorbar(im, ax=ax, fraction=0.046)
         fig.tight_layout()
         path = figdir / f"{name}.png"
         fig.savefig(path, dpi=160)
         plt.close(fig)
         paths.append(str(path))
+
     baseline, _ = astar(result["occupancy"], result["config"].start, result["config"].goal)
-    for name, bg in [("planned_vs_executed", result["occupancy"]), ("uncertainty_aware_vs_shortest", result["risk"]), ("architecture_diagram", None), ("navigation_pipeline_diagram", None)]:
+    comparison_specs = [
+        ("planned_vs_executed", result["occupancy"]),
+        ("uncertainty_aware_vs_shortest", result["risk"]),
+        ("architecture_diagram", None),
+        ("navigation_pipeline_diagram", None),
+    ]
+    for name, bg in comparison_specs:
         fig, ax = plt.subplots(figsize=(8, 5 if bg is not None else 2))
         if bg is None:
             ax.axis("off")
-            text = "Config → Grid World → Uncertainty/Risk/Recoverability → Planner → Safety Supervisor → Metrics" if "architecture" in name else "Belief Update → Plan → Execute → Assess Risk → Replan"
+            text = (
+                "Config → Grid World → Uncertainty/Risk/Recoverability → Planner → Safety Supervisor → Metrics"
+                if "architecture" in name
+                else "Belief Update → Plan → Execute → Assess Risk → Replan"
+            )
             ax.text(0.5, 0.5, text, ha="center", va="center")
         else:
             ax.imshow(bg, cmap="gray_r" if name == "planned_vs_executed" else "inferno")
             _plot_path(ax, baseline, linewidth=2, label="shortest A*")
             _plot_path(ax, result["planned_paths"][-1], linewidth=2, linestyle="--", label="risk-aware A*")
             _plot_path(ax, result["trajectory"], linewidth=2, linestyle=":", label="executed")
-            ax.legend(); ax.set_xticks([]); ax.set_yticks([])
+            ax.legend()
+            ax.set_xticks([])
+            ax.set_yticks([])
         ax.set_title(name.replace("_", " ").title() + " — Synthetic Demo")
         path = figdir / f"{name}.png"
-        fig.tight_layout(); fig.savefig(path, dpi=160); plt.close(fig)
+        fig.tight_layout()
+        fig.savefig(path, dpi=160)
+        plt.close(fig)
         paths.append(str(path))
+
     steps = [e["step"] for e in result["safety_events"]]
-    for name, values in [("risk_exposure_timeline", [e["risk"] for e in result["safety_events"]]), ("uncertainty_exposure_timeline", [e["uncertainty"] for e in result["safety_events"]])]:
-        fig, ax = plt.subplots(figsize=(7, 3)); ax.plot(steps, values); ax.set_ylim(0, 1); ax.set_title(name.replace("_", " ").title() + " — Synthetic Demo"); path = figdir / f"{name}.png"; fig.tight_layout(); fig.savefig(path, dpi=160); plt.close(fig); paths.append(str(path))
+    timeline_specs = [
+        ("risk_exposure_timeline", [e["risk"] for e in result["safety_events"]]),
+        ("uncertainty_exposure_timeline", [e["uncertainty"] for e in result["safety_events"]]),
+    ]
+    for name, values in timeline_specs:
+        fig, ax = plt.subplots(figsize=(7, 3))
+        ax.plot(steps, values)
+        ax.set_ylim(0, 1)
+        ax.set_title(name.replace("_", " ").title() + " — Synthetic Demo")
+        path = figdir / f"{name}.png"
+        fig.tight_layout()
+        fig.savefig(path, dpi=160)
+        plt.close(fig)
+        paths.append(str(path))
+
     states = ["NORMAL", "CAUTION", "SLOW_DOWN", "REROUTE", "STOP", "MISSION_ABORT"]
-    fig, ax = plt.subplots(figsize=(7, 3)); ax.step(steps, [states.index(e["state"]) for e in result["safety_events"]], where="post"); ax.set_yticks(range(len(states)), states); ax.set_title("Safety Supervisor Timeline — Synthetic Demo"); path = figdir / "safety_supervisor_timeline.png"; fig.tight_layout(); fig.savefig(path, dpi=160); plt.close(fig); paths.append(str(path))
+    fig, ax = plt.subplots(figsize=(7, 3))
+    ax.step(steps, [states.index(e["state"]) for e in result["safety_events"]], where="post")
+    ax.set_yticks(range(len(states)), states)
+    ax.set_title("Safety Supervisor Timeline — Synthetic Demo")
+    path = figdir / "safety_supervisor_timeline.png"
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+    paths.append(str(path))
     return paths
 
 
@@ -294,8 +456,14 @@ def make_demo_media(result: dict | None = None) -> tuple[str, str]:
         ax.scatter([result["config"].goal[1]], [result["config"].goal[0]], marker="*", s=120)
         ax.scatter([pos[1]], [pos[0]], marker="o", s=100)
         event = result["safety_events"][min(i, len(result["safety_events"]) - 1)]
-        ax.set_title(f"Uncertainty-Aware Navigation — Synthetic Demo\nstep={i} risk={event['risk']:.2f} uncertainty={event['uncertainty']:.2f} recoverability={event['recoverability']:.2f} state={event['state']}")
-        ax.set_xticks([]); ax.set_yticks([]); ax.legend(loc="upper right")
+        ax.set_title(
+            "Uncertainty-Aware Navigation — Synthetic Demo\n"
+            f"step={i} risk={event['risk']:.2f} uncertainty={event['uncertainty']:.2f} "
+            f"recoverability={event['recoverability']:.2f} state={event['state']}"
+        )
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.legend(loc="upper right")
         fig.tight_layout()
         frame = frame_dir / f"frame_{i:04d}.png"
         fig.savefig(frame, dpi=120)
@@ -313,14 +481,32 @@ def make_demo_media(result: dict | None = None) -> tuple[str, str]:
 def run_benchmarks() -> pd.DataFrame:
     cfg = ScenarioConfig()
     out = ensure_dirs(cfg.output_dir)
-    occ, belief, unknown, uncertainty, risk, recoverability = build_world(cfg)
+    occ, _belief, _unknown, uncertainty, risk, recoverability = build_world(cfg)
     rows = []
-    for planner in ["dijkstra", "astar", "uncertainty_aware_astar", "risk_aware_astar", "recoverability_aware_astar"]:
+    planners = ["dijkstra", "astar", "uncertainty_aware_astar", "risk_aware_astar", "recoverability_aware_astar"]
+    for planner in planners:
         path, info = plan(cfg, occ, cfg.start, cfg.goal, uncertainty, risk, recoverability, planner)
-        rows.append({"label": "Synthetic Demo", "planner": planner, "success": bool(path and path[-1] == cfg.goal), "path_length": len(path), "planning_time_s": info["planning_time_s"], "risk_exposure": float(sum(risk[p] for p in path)) if path else math.inf, "uncertainty_exposure": float(sum(uncertainty[p] for p in path)) if path else math.inf, "recoverability_mean": float(np.mean([recoverability[p] for p in path])) if path else 0.0})
+        rows.append(
+            {
+                "label": "Synthetic Demo",
+                "planner": planner,
+                "success": bool(path and path[-1] == cfg.goal),
+                "path_length": len(path),
+                "planning_time_s": info["planning_time_s"],
+                "risk_exposure": float(sum(risk[p] for p in path)) if path else math.inf,
+                "uncertainty_exposure": float(sum(uncertainty[p] for p in path)) if path else math.inf,
+                "recoverability_mean": float(np.mean([recoverability[p] for p in path])) if path else 0.0,
+            }
+        )
     df = pd.DataFrame(rows)
     df.to_csv(out / "metrics" / "benchmark_summary.csv", index=False)
-    (out / "reports" / "benchmark_report.md").write_text("# Benchmark Report — Synthetic Demo\n\nGenerated from deterministic synthetic grid-world code. These are not real-robot or state-of-the-art results.\n\n" + df.to_markdown(index=False), encoding="utf-8")
+    report = (
+        "# Benchmark Report — Synthetic Demo\n\n"
+        "Generated from deterministic synthetic grid-world code. "
+        "These are not real-robot or state-of-the-art results.\n\n"
+        + df.to_markdown(index=False)
+    )
+    (out / "reports" / "benchmark_report.md").write_text(report, encoding="utf-8")
     return df
 
 
@@ -329,4 +515,11 @@ def run_all() -> dict:
     figures = generate_figures(result)
     gif, mp4 = make_demo_media(result)
     benchmarks = run_benchmarks()
-    return {"label": "Synthetic Demo", "figures": len(figures), "gif": gif, "mp4": mp4, "benchmark_rows": len(benchmarks), "metrics": result["metrics"]}
+    return {
+        "label": "Synthetic Demo",
+        "figures": len(figures),
+        "gif": gif,
+        "mp4": mp4,
+        "benchmark_rows": len(benchmarks),
+        "metrics": result["metrics"],
+    }
