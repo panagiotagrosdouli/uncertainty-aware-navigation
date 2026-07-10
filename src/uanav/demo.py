@@ -171,7 +171,10 @@ def validate_path(path: list[Point], occupancy: np.ndarray) -> bool:
     return (
         bool(path)
         and all(occupancy[p] == 0 for p in path)
-        and all(abs(a[0] - b[0]) + abs(a[1] - b[1]) == 1 for a, b in zip(path, path[1:]))
+        and all(
+            abs(a[0] - b[0]) + abs(a[1] - b[1]) == 1
+            for a, b in zip(path, path[1:], strict=False)
+        )
     )
 
 
@@ -229,7 +232,8 @@ def safety_state(
     return "NORMAL"
 
 
-def run_synthetic_demo(cfg: ScenarioConfig = ScenarioConfig()) -> dict:
+def run_synthetic_demo(cfg: ScenarioConfig | None = None) -> dict:
+    cfg = ScenarioConfig() if cfg is None else cfg
     out = ensure_dirs(cfg.output_dir)
     occ, belief, unknown, uncertainty, risk, recoverability = build_world(cfg)
     pos = cfg.start
