@@ -101,7 +101,10 @@ def _candidate_record(
         belief.probability,
         belief.entropy,
         safe_regions,
-        safety_thresholds=SafetyThresholds(max_map_uncertainty=1.0),
+        safety_thresholds=SafetyThresholds(
+            max_collision_probability=0.60,
+            max_map_uncertainty=0.80,
+        ),
         recoverability_threshold=0.35,
     )
 
@@ -119,7 +122,7 @@ def _write_rows(path: Path, rows: list[dict]) -> None:
 
 def run_belief_space_demo(output_dir: str | Path = "results") -> BeliefSpaceRun:
     ground_truth, start, goal, viewpoint, direct, to_viewpoint, alternate = _scenario()
-    belief = OccupancyBelief(ground_truth.shape, prior=0.5)
+    belief = OccupancyBelief(ground_truth.shape, prior=0.2)
     sensor = RangeSensor(
         SensorConfig(
             radius=5.0,
@@ -147,15 +150,14 @@ def run_belief_space_demo(output_dir: str | Path = "results") -> BeliefSpaceRun:
     decisions.extend(initial_records)
     selected = select_admissible_candidate(initial_records)
     if selected is None:
-        selected_actions.append(ActionType.STOP)
+        selected_actions.append(str(ActionType.STOP))
     else:
         selected_actions.append(selected.selected_action)
         trajectory.extend(to_viewpoint[1:])
 
     heading = math.atan2(4 - viewpoint[0], 6 - viewpoint[1])
     observations = sensor.observe(ground_truth, viewpoint, heading, timestamp=1)
-    for observation in observations:
-        observation_rows.append(asdict(observation))
+    observation_rows.extend(asdict(observation) for observation in observations)
     update_rows.extend(belief.update(observations))
 
     direct_after = _candidate_record(direct_candidate, direct[4:], belief, safe_regions, 1)
@@ -164,21 +166,22 @@ def run_belief_space_demo(output_dir: str | Path = "results") -> BeliefSpaceRun:
     decisions.extend([direct_after, alternate_after])
     selected = select_admissible_candidate([direct_after, alternate_after])
     if selected is None:
-        selected_actions.append(ActionType.STOP)
+        selected_actions.append(str(ActionType.STOP))
     else:
         selected_actions.append(selected.selected_action)
         trajectory.extend(alternate[1:])
 
+    final_entropy = float(np.mean(belief.entropy))
     result = BeliefSpaceRun(
-        selected_actions=tuple(str(action) for action in selected_actions),
+        selected_actions=tuple(selected_actions),
         success=trajectory[-1] == goal,
         trajectory=tuple(trajectory),
         observation_count=len(observation_rows),
         map_update_count=len(update_rows),
         safety_rejection_count=sum(len(record.safety_rejections) for record in decisions),
         initial_mean_entropy=initial_entropy,
-        final_mean_entropy=float(np.mean(belief.entropy)),
-        information_gained=initial_entropy - float(np.mean(belief.entropy)),
+        final_mean_entropy=final_entropy,
+        information_gained=initial_entropy - final_entropy,
         decision_records=tuple(record.to_dict() for record in decisions),
     )
 
