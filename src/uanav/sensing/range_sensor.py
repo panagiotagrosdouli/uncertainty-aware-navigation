@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -40,9 +40,9 @@ def _line_cells(start: tuple[int, int], end: tuple[int, int]) -> list[tuple[int,
 
 
 class RangeSensor:
-    def __init__(self, config: SensorConfig = SensorConfig()) -> None:
-        self.config = config
-        self.rng = np.random.default_rng(config.seed)
+    def __init__(self, config: SensorConfig | None = None) -> None:
+        self.config = SensorConfig() if config is None else config
+        self.rng = np.random.default_rng(self.config.seed)
         self._pending: list[tuple[int, Observation]] = []
 
     def visible_cells(
