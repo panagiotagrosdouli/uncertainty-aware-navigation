@@ -72,7 +72,9 @@ class OccupancyBelief:
             self.observation_count[obs.row, obs.col] += 1
             self.last_observation_time[obs.row, obs.col] = obs.timestamp
             after = float(self.probability[obs.row, obs.col])
-            self.semantic_status[obs.row, obs.col] = "occupied" if after >= 0.65 else "free" if after <= 0.35 else "uncertain"
+            self.semantic_status[obs.row, obs.col] = (
+                "occupied" if after >= 0.65 else "free" if after <= 0.35 else "uncertain"
+            )
             event = {
                 "row": obs.row,
                 "col": obs.col,
@@ -121,7 +123,7 @@ class OccupancyBelief:
         Path(path).write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     @classmethod
-    def load(cls, path: str | Path) -> "OccupancyBelief":
+    def load(cls, path: str | Path) -> OccupancyBelief:
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
         belief = cls(tuple(payload["shape"]), payload["prior"])
         belief.log_odds = np.asarray(payload["log_odds"], dtype=float)
