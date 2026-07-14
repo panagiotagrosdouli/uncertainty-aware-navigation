@@ -1,0 +1,21 @@
+branch: feature/phd-belief-space-risk-sensitive-navigation
+status: in_progress
+verified:
+  focused_pytest: "6 passed"
+implemented:
+  - typed research records
+  - constant velocity prediction with covariance growth
+  - CVaR-style risk diagnostic
+  - split conformal envelope and empirical coverage
+  - approximate viability rejection
+  - independent safety shield
+  - adaptive sampling
+  - dynamic/calibration/ablation run-mode entry points
+blocked:
+  - task: full clean checkout and original regression suite
+    reason: sandbox DNS cannot resolve github.com
+  - task: ruff and black
+    reason: binaries unavailable in sandbox
+  - task: ROS2/Nav2/Gazebo execution
+    reason: runtime dependencies unavailable
+next_command: python scripts/run_all.py --mode smoke
