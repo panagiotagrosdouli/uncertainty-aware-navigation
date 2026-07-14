@@ -83,8 +83,10 @@ def analyze_decision_stability(
 def apply_hysteresis(
     previous: DecisionSnapshot,
     proposed: DecisionSnapshot,
-    config: HysteresisConfig = HysteresisConfig(),
+    config: HysteresisConfig | None = None,
 ) -> DecisionSnapshot:
+    if config is None:
+        config = HysteresisConfig()
     if proposed.supervisor_state in config.emergency_states:
         return proposed
     dwell_s = proposed.timestamp_s - previous.timestamp_s
