@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import json
+import platform
+import time
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from enum import StrEnum
 from math import hypot
 from pathlib import Path
-from typing import Sequence
-import json
-import platform
-import time
 
 import numpy as np
 
@@ -176,7 +176,12 @@ def estimate_risk(samples: Sequence[float], conformal_margin: float, alpha: floa
     return RiskEstimate(expected, tail, float(np.max(arr)), expected, upper, len(arr))
 
 
-def viability_score(path: CandidatePath, min_clearance_m: float, escape_routes: int, safe_stop_available: bool) -> float:
+def viability_score(
+    path: CandidatePath,
+    min_clearance_m: float,
+    escape_routes: int,
+    safe_stop_available: bool,
+) -> float:
     clearance_term = min(1.0, max(0.0, min_clearance_m / 0.8))
     escape_term = min(1.0, escape_routes / 2.0)
     stop_term = 1.0 if safe_stop_available else 0.0
