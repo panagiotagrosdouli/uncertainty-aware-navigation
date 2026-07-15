@@ -29,6 +29,10 @@ src = ["src", "tests", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/uanav/robot_showcase.py" = ["E402", "F841"]
 
 [tool.black]
 line-length = 120

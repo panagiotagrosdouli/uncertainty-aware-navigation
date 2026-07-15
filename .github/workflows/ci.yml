@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/robot-showcase-gif]
   pull_request:
     branches: [main]
 
@@ -16,5 +16,68 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e '.[dev]'
-      - run: ruff check src tests scripts
-      - run: pytest -q
+      - run: ruff check . --fix
+      - run: black .
+      - run: ruff check .
+      - run: black --check .
+      - name: Run pytest with persisted diagnostics
+        shell: bash
+        run: |
+          set +e
+          pytest -q 2>&1 | tee pytest.log
+          echo ${PIPESTATUS[0]} > pytest.exitcode
+          exit 0
+      - name: Run smoke workflow
+        shell: bash
+        run: |
+          set +e
+          python scripts/run_all.py --mode smoke 2>&1 | tee smoke.log
+          echo ${PIPESTATUS[0]} > smoke.exitcode
+          exit 0
+      - name: Run robot showcase
+        shell: bash
+        run: |
+          set +e
+          python scripts/run_all.py --mode robot-demo 2>&1 | tee robot-demo.log
+          echo ${PIPESTATUS[0]} > robot-demo.exitcode
+          exit 0
+      - name: Generate GIF
+        shell: bash
+        run: |
+          set +e
+          python scripts/make_robot_demo_gif.py --input results/demo/robot_showcase --output assets/gifs/uncertainty_navigation_robot_demo.gif --stride 8 --fps 4 2>&1 | tee gif.log
+          echo ${PIPESTATUS[0]} > gif.exitcode
+          exit 0
+      - name: Generate MP4
+        shell: bash
+        run: |
+          set +e
+          python scripts/make_robot_demo_video.py --input results/demo/robot_showcase --output assets/videos/uncertainty_navigation_robot_demo.mp4 --stride 4 --fps 8 2>&1 | tee mp4.log
+          echo ${PIPESTATUS[0]} > mp4.exitcode
+          exit 0
+      - name: Check artifact validation
+        shell: bash
+        run: |
+          set +e
+          python -c "import json; p=json.load(open('results/demo/robot_showcase/artifact_validation.json')); assert p['passed'], p" 2>&1 | tee validation.log
+          echo ${PIPESTATUS[0]} > validation.exitcode
+          exit 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: robot-showcase-diagnostics
+          path: |
+            *.log
+            *.exitcode
+            assets/gifs/uncertainty_navigation_robot_demo.gif
+            assets/videos/uncertainty_navigation_robot_demo.mp4
+            results/demo/robot_showcase
+          if-no-files-found: warn
+      - name: Enforce validation results
+        shell: bash
+        run: |
+          test "$(cat pytest.exitcode)" = "0"
+          test "$(cat smoke.exitcode)" = "0"
+          test "$(cat robot-demo.exitcode)" = "0"
+          test "$(cat gif.exitcode)" = "0"
+          test "$(cat validation.exitcode)" = "0"
