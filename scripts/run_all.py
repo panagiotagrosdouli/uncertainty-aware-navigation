@@ -49,11 +49,21 @@ def run_media() -> dict:
     root = Path("results/demo/robot_showcase")
     if not (root / "robot_states.csv").exists():
         run_robot_demo()
-    gif = make_gif(root, "assets/gifs/uncertainty_navigation_robot_demo.gif")
+    gif = make_gif(
+        root,
+        "assets/gifs/uncertainty_navigation_robot_demo.gif",
+        stride=8,
+        fps=4,
+    )
     mp4: Path | None = None
     codec_error: str | None = None
     try:
-        mp4 = make_mp4(root, "assets/videos/uncertainty_navigation_robot_demo.mp4")
+        mp4 = make_mp4(
+            root,
+            "assets/videos/uncertainty_navigation_robot_demo.mp4",
+            stride=4,
+            fps=8,
+        )
         mirror = Path("results/videos/uncertainty_navigation_robot_demo.mp4")
         mirror.parent.mkdir(parents=True, exist_ok=True)
         mirror.write_bytes(mp4.read_bytes())
