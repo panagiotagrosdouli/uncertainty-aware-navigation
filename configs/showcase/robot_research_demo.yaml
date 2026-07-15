@@ -1,0 +1,37 @@
+status:
+  platform: Simulated Mobile Robot
+  validation: Synthetic Validation
+  maturity: Research Prototype
+  ros2: ROS2 Validation Pending
+  hardware: Hardware Validation Required
+seed: 7
+simulation:
+  dt: 0.2
+  visual_fps: 10
+  max_linear_velocity: 0.8
+  max_angular_velocity: 1.4
+  max_linear_acceleration: 0.8
+  robot_radius: 0.28
+  sensor_range: 4.8
+  sensor_fov_deg: 110
+map:
+  width: 18
+  height: 12
+  resolution_m: 0.5
+mission:
+  start: [1.5, 3.0, 0.0]
+  goal: [8.0, 3.0]
+  viewpoint: [3.0, 1.5]
+  fallback_region: [1.0, 4.5, 2.5, 5.5]
+  hidden_obstacle: [4.0, 3.0, 0.35]
+  poor_localization_region: [5.0, 4.0, 7.5, 5.5]
+  dynamic_obstacle:
+    id: crossing-1
+    start: [6.0, 1.0]
+    velocity: [0.0, 0.55]
+thresholds:
+  max_route_risk: 0.45
+  caution_route_risk: 0.30
+  minimum_clearance_m: 0.74
+  minimum_viability: 0.50
+  active_perception_entropy: 0.45
