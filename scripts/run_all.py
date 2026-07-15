@@ -10,6 +10,9 @@ from uanav.demo import run_synthetic_demo
 from uanav.research_platform import run_research_smoke
 from uanav.robot_showcase import generate_showcase, make_gif, make_mp4, validate_artifacts
 
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+SHOWCASE_CONFIG = REPOSITORY_ROOT / "configs" / "showcase" / "robot_research_demo.yaml"
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run uncertainty-aware navigation workflows.")
@@ -36,7 +39,7 @@ def parse_args() -> argparse.Namespace:
 
 def run_robot_demo() -> dict:
     return generate_showcase(
-        "configs/showcase/robot_research_demo.yaml",
+        SHOWCASE_CONFIG,
         7,
         "results/demo/robot_showcase",
     )
