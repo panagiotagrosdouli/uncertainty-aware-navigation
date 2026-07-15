@@ -16,6 +16,8 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e '.[dev]'
+      - run: ruff check . --fix
+      - run: black .
       - run: ruff check .
       - run: black --check .
       - run: pytest -q
