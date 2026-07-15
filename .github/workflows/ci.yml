@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/robot-showcase-gif]
   pull_request:
     branches: [main]
 
@@ -16,5 +16,23 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e '.[dev]'
-      - run: ruff check src tests scripts
+      - run: ruff check .
+      - run: black --check .
       - run: pytest -q
+      - run: python scripts/run_all.py --mode smoke
+      - run: python scripts/run_all.py --mode robot-demo
+      - run: python scripts/make_robot_demo_gif.py --input results/demo/robot_showcase --output assets/gifs/uncertainty_navigation_robot_demo.gif --stride 8 --fps 4
+      - run: python scripts/make_robot_demo_video.py --input results/demo/robot_showcase --output assets/videos/uncertainty_navigation_robot_demo.mp4 --stride 4 --fps 8
+        continue-on-error: true
+      - name: Check artifact validation
+        run: python -c "import json; p=json.load(open('results/demo/robot_showcase/artifact_validation.json')); assert p['passed'], p"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: robot-showcase-smoke
+          path: |
+            assets/gifs/uncertainty_navigation_robot_demo.gif
+            assets/videos/uncertainty_navigation_robot_demo.mp4
+            results/demo/robot_showcase/metrics.json
+            results/demo/robot_showcase/manifest.json
+            results/demo/robot_showcase/artifact_validation.json
+          if-no-files-found: error
